@@ -140,21 +140,44 @@ jobs:
       - name: 检查产物
         working-directory: immortalwrt
         run: |
-          echo "=== 编译产物 ==="
-          find bin/targets/rockchip/armv8/ -type f \( -name "*opc-h28k*" -o -name "*OPC*" -o -name "*h28k*" \) 2>/dev/null || true
-          echo ""
-          echo "=== bin 目录内容 ==="
-          ls -lh bin/targets/rockchip/armv8/ 2>/dev/null || echo "bin 目录为空"
-          echo ""
-          echo "=== Profiles ==="
-          cat bin/targets/rockchip/armv8/profiles.json 2>/dev/null && echo "" || echo "无 profiles.json"
+          FIRMWARE="bin/targets/rockchip/armv8/immortalwrt-rockchip-armv8-hinlink_opc-h28k-squashfs-sysupgrade.img.gz"
+          if [ ! -f "$FIRMWARE" ]; then
+            echo "❌ 固件文件不存在: $FIRMWARE"
+            echo "=== 目录内容 ==="
+            ls -lh bin/targets/rockchip/armv8/ 2>/dev/null || echo "目录为空"
+            exit 1
+          fi
+          ls -lh "$FIRMWARE"
+          echo "FIRMWARE_PATH=$FIRMWARE" >> $GITHUB_ENV
+          echo "FIRMWARE_NAME=$(basename $FIRMWARE)" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          echo "UPSTREAM_HASH=$(git log -1 --format='%h')" >> $GITHUB_ENV
 
-      - name: 上传固件
+      - name: 上传固件到 Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: opc-h28k-firmware
-          path: immortalwrt/bin/targets/rockchip/armv8/
-          retention-days: 60
+          name: immortalwrt-rockchip-armv8-hinlink_opc-h28k-squashfs-sysupgrade
+          path: immortalwrt/${{ env.FIRMWARE_PATH }}
+          retention-days: 7
+
+      - name: 上传固件到 Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "OPC-H28K 固件 (每日自动编译)"
+          body: |
+            ## OPC-H28K 每日自动编译固件
+
+            - **编译日期**: ${{ env.BUILD_DATE }}
+            - **上游版本**: immortalwrt/openwrt-25.12 (${{ env.UPSTREAM_HASH }})
+            - **设备**: HINLINK OPC-H28K (RK3528)
+            - **固件**: ${{ env.FIRMWARE_NAME }}
+
+            > 此 Release 每日自动更新，始终保留最新固件。
+          files: immortalwrt/${{ env.FIRMWARE_PATH }}
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 上传编译日志 (仅失败时)
         if: failure()
@@ -169,7 +192,7 @@ jobs:
         run: |
           if [ "${{ job.status }}" == "success" ]; then
             echo "✅ OPC-H28K 编译成功！"
-            echo "固件请到: https://github.com/Supremeyyds/immortalwrt-h28k/actions 下载"
+            echo "固件下载: https://github.com/Supremeyyds/immortalwrt-h28k/releases/tag/latest"
           elif [ "${{ job.status }}" == "failure" ]; then
             echo "❌ 编译失败，请检查上方日志"
             echo "https://github.com/Supremeyyds/immortalwrt-h28k/actions/runs/${{ github.run_id }}"
