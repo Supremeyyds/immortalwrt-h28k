@@ -92,9 +92,9 @@ jobs:
         working-directory: immortalwrt
         run: |
           cp ../.github/configs/opc-h28k.config .config
-          make olddefconfig V=s || {
-            echo "=== olddefconfig failed, re-running with full output ==="
-            make olddefconfig V=sc
+          make defconfig 2>&1 || {
+            echo "=== defconfig failed, trying with full verbose output ==="
+            make defconfig V=sc
             exit 1
           }
           echo ""
