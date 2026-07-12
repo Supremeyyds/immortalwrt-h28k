@@ -88,24 +88,24 @@ jobs:
           echo "✅ Patch 应用成功"
           git diff --stat
 
+      - name: 更新 feeds
+        working-directory: immortalwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
       - name: 应用编译配置
         working-directory: immortalwrt
         run: |
           cp ../.github/configs/opc-h28k.config .config
           make defconfig 2>&1 || {
-            echo "=== defconfig failed, trying with full verbose output ==="
+            echo "=== defconfig failed ==="
             make defconfig V=sc
             exit 1
           }
           echo ""
           echo "=== 目标设备 ==="
           grep "CONFIG_TARGET_rockchip_armv8_DEVICE" .config | grep "=y"
-
-      - name: 更新 feeds
-        working-directory: immortalwrt
-        run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
 
       - name: 下载源码包
         working-directory: immortalwrt
