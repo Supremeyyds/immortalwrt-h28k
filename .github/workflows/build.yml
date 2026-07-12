@@ -21,12 +21,13 @@ jobs:
     timeout-minutes: 360
 
     steps:
+      - name: 检出仓库 (配置和 patch)
+        uses: actions/checkout@v4
+
       - name: 检查磁盘空间
         run: |
           echo "=== 初始磁盘状态 ==="
           df -h /
-          echo ""
-          # Actions runner 默认 ~40GB 可用
 
       - name: 清理不需要的预装软件 (释放空间)
         run: |
@@ -54,66 +55,56 @@ jobs:
 
       - name: 配置 ccache
         run: |
-          ccache --version
           ccache -M 2G
           ccache -s
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
-
-      - name: 拉取代码
-        uses: actions/checkout@v4
-        with:
-          ref: master
-          fetch-depth: 0
-
-      - name: 设置 git 用户
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-      - name: 同步上游并 rebase
-        run: |
-          echo "=== 添加 upstream remote ==="
-          git remote add upstream https://github.com/immortalwrt/immortalwrt.git || true
-          git fetch upstream openwrt-25.12
-
-          echo "=== 上游最新: $(git rev-parse upstream/openwrt-25.12) ==="
-          echo "=== 当前 HEAD: $(git rev-parse HEAD) ==="
-
-          if git rebase upstream/openwrt-25.12; then
-            echo "✅ Rebase 成功"
-          else
-            echo "❌ Rebase 冲突！请手动处理。"
-            git diff --name-only --diff-filter=U || true
-            exit 1
-          fi
-
-          echo ""
-          echo "=== Rebase 后的 commits ==="
-          git log --oneline upstream/openwrt-25.12..HEAD
 
       - name: 恢复 ccache 缓存
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ccache-roc-${{ hashFiles('.github/configs/opc-h28k.config') }}-${{ github.run_number }}
+          key: ccache-opc-h28k-${{ github.run_number }}
           restore-keys: |
-            ccache-roc-${{ hashFiles('.github/configs/opc-h28k.config') }}-
-            ccache-roc-
+            ccache-opc-h28k-
 
-      - name: 更新 feeds
+      - name: 克隆上游源码
         run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          git clone -b openwrt-25.12 --single-branch --depth=1 \
+            https://github.com/immortalwrt/immortalwrt.git immortalwrt
+          echo "=== 克隆完成，磁盘状态 ==="
+          df -h / | tail -1
 
-      - name: 应用配置
+      - name: 应用 OPC-H28K 补丁
+        working-directory: immortalwrt
         run: |
-          cp .github/configs/opc-h28k.config .config
+          git apply --3way ../patches/0001-opc-h28k.patch || {
+            echo "❌ Patch 应用失败！上游代码可能已大幅变更，需要手动更新 patch。"
+            echo "   1. 本地重新 git clone immortalwrt"
+            echo "   2. 手动修改目标文件 "
+            echo "   3. git diff > patches/0001-opc-h28k.patch"
+            echo "   4. 推送更新"
+            exit 1
+          }
+          echo "✅ Patch 应用成功"
+          git diff --stat
+
+      - name: 应用编译配置
+        working-directory: immortalwrt
+        run: |
+          cp ../.github/configs/opc-h28k.config .config
           make olddefconfig
           echo ""
           echo "=== 目标设备 ==="
           grep "CONFIG_TARGET_rockchip_armv8_DEVICE" .config | grep "=y"
 
+      - name: 更新 feeds
+        working-directory: immortalwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
       - name: 下载源码包
+        working-directory: immortalwrt
         timeout-minutes: 30
         run: |
           make -j$(nproc) download V=s
@@ -121,55 +112,63 @@ jobs:
           df -h / | tail -1
 
       - name: 编译
+        working-directory: immortalwrt
         timeout-minutes: 300
         run: |
           export PATH="/usr/lib/ccache:$PATH"
           echo "=== 开始编译 $(date) ==="
           make -j$(nproc) V=s 2>&1 | tee build.log
-          echo "exit code: ${PIPESTATUS[0]}"
-          echo ""
-          echo "=== 编译完成 $(date) ==="
+          code=${PIPESTATUS[0]}
+          echo "exit code: $code"
+          echo "=== 编译完成 $(date), 退出码: $code ==="
           echo ""
           echo "=== 磁盘状态 ==="
           df -h / | tail -1
           echo ""
           echo "=== ccache 统计 ==="
           ccache -s
+          if [ $code -ne 0 ]; then
+            echo "编译过程出错 (exit code: $code)"
+            tail -100 build.log
+            exit $code
+          fi
 
       - name: 检查产物
+        working-directory: immortalwrt
         run: |
           echo "=== 编译产物 ==="
-          find bin/targets/rockchip/armv8/ -type f -name "*opc-h28k*" -o -name "*OPC*" 2>/dev/null || echo "未找到 OPC-H28K 固件"
+          find bin/targets/rockchip/armv8/ -type f \( -name "*opc-h28k*" -o -name "*OPC*" -o -name "*h28k*" \) 2>/dev/null || true
           echo ""
           echo "=== bin 目录内容 ==="
           ls -lh bin/targets/rockchip/armv8/ 2>/dev/null || echo "bin 目录为空"
           echo ""
           echo "=== Profiles ==="
-          cat bin/targets/rockchip/armv8/profiles.json 2>/dev/null | python3 -m json.tool 2>/dev/null || echo "无 profiles"
+          cat bin/targets/rockchip/armv8/profiles.json 2>/dev/null && echo "" || echo "无 profiles.json"
 
       - name: 上传固件
         uses: actions/upload-artifact@v4
         with:
           name: opc-h28k-firmware
-          path: |
-            bin/targets/rockchip/armv8/*opc-h28k*
-            bin/targets/rockchip/armv8/*OPC-H28K*
-            bin/targets/rockchip/armv8/profiles.json
+          path: immortalwrt/bin/targets/rockchip/armv8/
           retention-days: 60
 
-      - name: 上传编译日志
+      - name: 上传编译日志 (仅失败时)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: build-log-failed
-          path: build.log
+          path: immortalwrt/build.log
           retention-days: 7
 
-      - name: 通知
+      - name: 结果通知
         if: always()
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ 编译成功！固件已上传到 Artifacts"
+            echo "✅ OPC-H28K 编译成功！"
+            echo "固件请到: https://github.com/Supremeyyds/immortalwrt-h28k/actions 下载"
+          elif [ "${{ job.status }}" == "failure" ]; then
+            echo "❌ 编译失败，请检查上方日志"
+            echo "https://github.com/Supremeyyds/immortalwrt-h28k/actions/runs/${{ github.run_id }}"
           else
-            echo "❌ 编译失败，请检查日志"
+            echo "⚠️ 编译状态: ${{ job.status }}"
           fi
