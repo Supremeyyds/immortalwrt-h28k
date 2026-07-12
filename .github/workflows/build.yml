@@ -62,7 +62,7 @@ jobs:
       - name: 拉取代码
         uses: actions/checkout@v4
         with:
-          ref: opc-h28k
+          ref: master
           fetch-depth: 0
 
       - name: 设置 git 用户
