@@ -92,7 +92,11 @@ jobs:
         working-directory: immortalwrt
         run: |
           cp ../.github/configs/opc-h28k.config .config
-          make olddefconfig
+          make olddefconfig V=s || {
+            echo "=== olddefconfig failed, re-running with full output ==="
+            make olddefconfig V=sc
+            exit 1
+          }
           echo ""
           echo "=== 目标设备 ==="
           grep "CONFIG_TARGET_rockchip_armv8_DEVICE" .config | grep "=y"
