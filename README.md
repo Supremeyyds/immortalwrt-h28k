@@ -40,8 +40,6 @@
 
 本仓库每天北京时间 **11:17** 自动编译，始终跟踪上游最新代码。编译成功后固件会自动上传到 [Releases](https://github.com/Supremeyyds/immortalwrt-h28k/releases/latest)。
 
-你也可以在 [Actions](https://github.com/Supremeyyds/immortalwrt-h28k/actions) 页面手动触发编译。
-
 ## 🙏 致谢
 
 - [ImmortalWrt](https://github.com/immortalwrt/immortalwrt) — 上游项目
