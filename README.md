@@ -4,9 +4,9 @@
 <img src="https://img.shields.io/badge/SoC-RK3528-orange?style=for-the-badge&logo=rockchip" alt="RK3528">&nbsp;
 <img src="https://img.shields.io/badge/Arch-ARMv8-aarch64-green?style=for-the-badge" alt="ARMv8">
 
-# HINLINK H28K
+# H28K
 
-**基于 ImmortalWrt 的 HINLINK H28K (RK3528) 每日自动编译固件**
+**基于 ImmortalWrt 的 H28K (RK3528) 每日自动编译固件**
 
 [![每日编译](https://github.com/Supremeyyds/immortalwrt-h28k/actions/workflows/build.yml/badge.svg)](https://github.com/Supremeyyds/immortalwrt-h28k/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/Supremeyyds/immortalwrt-h28k?label=最新固件&color=brightgreen)](https://github.com/Supremeyyds/immortalwrt-h28k/releases/latest)
@@ -22,19 +22,11 @@
 
 | 项目 | 说明 |
 |------|------|
-| **设备型号** | HINLINK H28K |
+| **设备型号** | H28K |
 | **处理器** | 瑞芯微 RK3528 (四核 Cortex-A53) |
 | **架构** | ARMv8 / AArch64 |
 | **固件格式** | squashfs-sysupgrade |
 | **上游分支** | [immortalwrt/openwrt-25.12](https://github.com/immortalwrt/immortalwrt/tree/openwrt-25.12) |
-
-## 🚀 快速开始
-
-前往 [Releases 页面](https://github.com/Supremeyyds/immortalwrt-h28k/releases/latest) 下载最新固件：
-
-```
-immortalwrt-rockchip-armv8-hinlink_opc-h28k-squashfs-sysupgrade.img.gz
-```
 
 ## 📦 默认配置
 
