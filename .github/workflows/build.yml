@@ -170,7 +170,7 @@ jobs:
 
             - **编译日期**: ${{ env.BUILD_DATE }}
             - **上游版本**: immortalwrt/openwrt-25.12 (${{ env.UPSTREAM_HASH }})
-            - **设备**: HINLINK H28K (RK3528)
+            - **设备**: H28K (RK3528)
             - **固件**: ${{ env.FIRMWARE_NAME }}
 
             > 此 Release 每日自动更新，始终保留最新固件。
