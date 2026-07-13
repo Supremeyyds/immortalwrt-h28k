@@ -40,7 +40,7 @@
 
 ## 🔄 自动更新
 
-本仓库每天北京时间 **11:17** 自动编译，始终跟踪上游最新代码。编译成功后固件会自动上传到 [Releases](https://github.com/Supremeyyds/immortalwrt-h28k/releases/latest)。
+本仓库每日自动编译，始终跟踪上游最新代码。编译成功后固件会自动上传到 [Releases](https://github.com/Supremeyyds/immortalwrt-h28k/releases/latest)。
 
 ## 🙏 致谢
 
