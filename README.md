@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/ImmortalWrt-25.12-blue?style=for-the-badge&logo=openwrt" alt="ImmortalWrt">&nbsp;
-<img src="https://img.shields.io/badge/SoC-RK3528-orange?style=for-the-badge&logo=rockchip" alt="RK3528">&nbsp;
-<img src="https://img.shields.io/badge/Arch-ARMv8-aarch64-green?style=for-the-badge" alt="ARMv8">
+<img src="https://img.shields.io/badge/ImmortalWrt-25.12-blue?style=for-the-badge&logo=openwrt" alt="ImmortalWrt">
+<img src="https://img.shields.io/badge/SoC-RK3528-orange?style=for-the-badge&logo=arm" alt="RK3528">
+<img src="https://img.shields.io/badge/Arch-ARMv8-aarch64-green?style=for-the-badge&logo=linux" alt="ARMv8">
 
 # H28K
 
