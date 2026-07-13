@@ -30,83 +30,10 @@
 
 ## 🚀 快速开始
 
-### 下载固件
-
 前往 [Releases 页面](https://github.com/Supremeyyds/immortalwrt-h28k/releases/latest) 下载最新固件：
 
 ```
 immortalwrt-rockchip-armv8-hinlink_opc-h28k-squashfs-sysupgrade.img.gz
-```
-
-### 刷机方法
-
-**首次刷机（从原厂固件）：**
-
-1. 解压 `.img.gz` 文件得到 `.img`
-2. 使用 [RKDevTool](https://github.com/rockchip-linux/rkbin) 进入 Loader 模式
-3. 选择固件写入 eMMC
-
-**升级（已刷 OpenWrt/ImmortalWrt）：**
-
-1. 登录 LuCI 管理界面（默认 `http://192.168.1.1`）
-2. 进入 **系统 → 备份/升级**
-3. 上传 `.img.gz` 固件文件
-4. 取消勾选"保留配置"（推荐全新刷入）
-5. 点击"刷写固件"
-
-## ⚙️ 编译信息
-
-本仓库使用 **GitHub Actions** 每日自动编译：
-
-```
-北京时间每天 11:17 自动执行
-  ↓
-git clone immortalwrt/openwrt-25.12 最新代码
-  ↓
-应用 H28K 设备补丁 (DTS / U-Boot / 网络 / LED)
-  ↓
-更新 feeds (packages / luci / nikki)
-  ↓
-make defconfig → make -j$(nproc)
-  ↓
-上传固件到 Releases
-```
-
-### 包含的补丁
-
-| 补丁 | 说明 |
-|------|------|
-| `feeds.conf.default` | 添加 nikki 源 |
-| `uboot-rockchip` | 添加 generic-rk3528 U-Boot |
-| `rk3528-opc-h28k.dts` | H28K 设备树 |
-| `image/armv8.mk` | 固件编译定义 |
-| `01_leds` / `02_network` | LED 灯和网络接口配置 |
-
-### 手动编译
-
-```bash
-git clone https://github.com/Supremeyyds/immortalwrt-h28k.git
-cd immortalwrt-h28k
-
-# 克隆上游源码
-git clone -b openwrt-25.12 --single-branch --depth=1 \
-  https://github.com/immortalwrt/immortalwrt.git immortalwrt
-
-cd immortalwrt
-
-# 应用补丁
-git apply --3way ../patches/0001-opc-h28k.patch
-
-# 更新 feeds
-./scripts/feeds update -a
-./scripts/feeds install -a
-
-# 应用配置
-cp ../.github/configs/opc-h28k.config .config
-make defconfig
-
-# 编译
-make -j$(nproc) V=s
 ```
 
 ## 📦 默认配置
