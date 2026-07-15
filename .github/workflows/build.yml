@@ -2,7 +2,7 @@ name: 每日编译 OPC-H28K
 
 on:
   schedule:
-    # 每天北京时间 11:00 (UTC 03:00)，避开高峰
+    # 每天北京时间 11:17 (UTC 03:17)，避开高峰
     - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
@@ -10,6 +10,9 @@ on:
         description: '是否全量重新编译（clean build）'
         type: boolean
         default: false
+
+permissions:
+  contents: write
 
 concurrency:
   group: build-opc-h28k
@@ -60,6 +63,7 @@ jobs:
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
 
       - name: 恢复 ccache 缓存
+        if: ${{ !inputs.clean_build }}
         uses: actions/cache@v4
         with:
           path: ~/.ccache
