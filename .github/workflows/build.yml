@@ -83,7 +83,8 @@ jobs:
         run: |
           grep -qxF "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git;main" feeds.conf.default || \
             echo "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git;main" >> feeds.conf.default
-          cp -a ../files/. .
+          install -Dm0644 ../dts/rk3528-opc-h28k.dts \
+            target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3528-opc-h28k.dts
           for patch in ../patches/*.patch; do
             echo "=== 应用 patch: $patch ==="
             git apply --check --3way "$patch" || {
