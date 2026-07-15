@@ -81,14 +81,19 @@ jobs:
       - name: 应用 OPC-H28K 补丁
         working-directory: immortalwrt
         run: |
-          git apply --3way ../patches/0001-opc-h28k.patch || {
-            echo "❌ Patch 应用失败！上游代码可能已大幅变更，需要手动更新 patch。"
-            echo "   1. 本地重新 git clone immortalwrt"
-            echo "   2. 手动修改目标文件 "
-            echo "   3. git diff > patches/0001-opc-h28k.patch"
-            echo "   4. 推送更新"
-            exit 1
-          }
+          grep -qxF "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git;main" feeds.conf.default || \
+            echo "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git;main" >> feeds.conf.default
+          cp -a ../files/. .
+          for patch in ../patches/*.patch; do
+            echo "=== 应用 patch: $patch ==="
+            git apply --check --3way "$patch" || {
+              echo "❌ Patch 检查失败: $patch"
+              git apply --reject "$patch" || true
+              find . -name "*.rej" -print -exec cat {} \;
+              exit 1
+            }
+            git apply --3way "$patch"
+          done
           echo "✅ Patch 应用成功"
           git diff --stat
 
@@ -116,6 +121,7 @@ jobs:
         timeout-minutes: 30
         run: |
           make -j$(nproc) download V=s
+          find dl -size -1024c -print -delete
           echo "=== 下载完成，磁盘状态 ==="
           df -h / | tail -1
 
@@ -151,7 +157,8 @@ jobs:
             ls -lh bin/targets/rockchip/armv8/ 2>/dev/null || echo "目录为空"
             exit 1
           fi
-          ls -lh "$FIRMWARE"
+          sha256sum "$FIRMWARE" | tee "$FIRMWARE.sha256sum"
+          ls -lh "$FIRMWARE" "$FIRMWARE.sha256sum"
           echo "FIRMWARE_PATH=$FIRMWARE" >> $GITHUB_ENV
           echo "FIRMWARE_NAME=$(basename $FIRMWARE)" >> $GITHUB_ENV
           echo "BUILD_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
@@ -161,7 +168,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: immortalwrt-rockchip-armv8-hinlink_opc-h28k-squashfs-sysupgrade
-          path: immortalwrt/${{ env.FIRMWARE_PATH }}
+          path: |
+            immortalwrt/${{ env.FIRMWARE_PATH }}
+            immortalwrt/${{ env.FIRMWARE_PATH }}.sha256sum
           retention-days: 7
 
       - name: 上传固件到 Releases
@@ -176,10 +185,14 @@ jobs:
             - **上游版本**: immortalwrt/openwrt-25.12 (${{ env.UPSTREAM_HASH }})
             - **设备**: H28K (RK3528)
             - **固件**: ${{ env.FIRMWARE_NAME }}
+            - **校验**: `${{ env.FIRMWARE_NAME }}.sha256sum`
 
             > 此 Release 每日自动更新，始终保留最新固件。
-          files: immortalwrt/${{ env.FIRMWARE_PATH }}
+          files: |
+            immortalwrt/${{ env.FIRMWARE_PATH }}
+            immortalwrt/${{ env.FIRMWARE_PATH }}.sha256sum
           make_latest: true
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
