@@ -162,7 +162,7 @@ jobs:
           ls -lh "$FIRMWARE" "$FIRMWARE.sha256sum"
           echo "FIRMWARE_PATH=$FIRMWARE" >> $GITHUB_ENV
           echo "FIRMWARE_NAME=$(basename $FIRMWARE)" >> $GITHUB_ENV
-          echo "BUILD_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(TZ=Asia/Shanghai date +'%Y%m%d')" >> $GITHUB_ENV
           echo "UPSTREAM_HASH=$(git log -1 --format='%h')" >> $GITHUB_ENV
 
       - name: 上传固件到 Artifacts
@@ -177,8 +177,8 @@ jobs:
       - name: 上传固件到 Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: "H28K 固件 (每日自动编译)"
+          tag_name: h28k-${{ env.BUILD_DATE }}
+          name: "H28K 固件 ${{ env.BUILD_DATE }}"
           body: |
             ## H28K 每日自动编译固件
 
@@ -188,7 +188,7 @@ jobs:
             - **固件**: ${{ env.FIRMWARE_NAME }}
             - **校验**: `${{ env.FIRMWARE_NAME }}.sha256sum`
 
-            > 此 Release 每日自动更新，始终保留最新固件。
+            > 每日编译会创建独立 Release，便于保留历史版本。
           files: |
             immortalwrt/${{ env.FIRMWARE_PATH }}
             immortalwrt/${{ env.FIRMWARE_PATH }}.sha256sum
@@ -210,7 +210,7 @@ jobs:
         run: |
           if [ "${{ job.status }}" == "success" ]; then
             echo "✅ OPC-H28K 编译成功！"
-            echo "固件下载: https://github.com/Supremeyyds/immortalwrt-h28k/releases/tag/latest"
+            echo "固件下载: https://github.com/Supremeyyds/immortalwrt-h28k/releases/tag/h28k-${{ env.BUILD_DATE }}"
           elif [ "${{ job.status }}" == "failure" ]; then
             echo "❌ 编译失败，请检查上方日志"
             echo "https://github.com/Supremeyyds/immortalwrt-h28k/actions/runs/${{ github.run_id }}"
